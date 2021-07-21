@@ -71,22 +71,20 @@ class BenchmarkTrainable(tune.Trainable):
 
     def step(self):
         config = self.config.copy()
-        config["n_estimators"] = int(round(config["n_estimators"]))
-        config["num_leaves"] = int(round(config["num_leaves"]))
-        config["min_child_samples"] = int(round(config["min_child_samples"]))
-        config["max_bin"] = 1 << int(round(config["log_max_bin"])) - 1
-        estimator = clone(self.estimator).set_params(**config)
-        cv_results = self._cross_validate(
-            estimator,
-            X=self.X,
-            X_ref=self.X_ref,
-            y=self.y,
-            y_ref=self.y_ref,
-            scoring="roc_auc"
-            if len(np.unique(self.y)) == 2 else "roc_auc_ovr_weighted",
-            cv=self.cv,
-        )
-        return {"roc_auc": np.mean(cv_results["test_score"])}
+        self.actors = [
+            ray_score_on_test.remote(self.estimator, config, X_train, y_train,
+                                     X_test, y_test)
+            for X_train, y_train, X_test, y_test in self.folds
+        ]
+        results = []
+        remaining_actors = self.actors
+        self.stop_event.add_actor(remaining_actors)
+        for actor in remaining_actors:
+            if self.stop_event.is_set():
+                print("stop event is set, cleaning up")
+                return {"roc_auc": np.nan}
+            results.append(ray.get(actor))
+        return {"roc_auc": np.mean(ray.get(results))}
 
     def reset_config(self, new_config):
         self.config = new_config

@@ -46,7 +46,7 @@ tasks = {
     41165: "robert",
     41161: "riccardo",
     41159: "guillermo",
-    41150: "MiniBooNE",
+    # 41150: "MiniBooNE",
     41138: "APSFailure",
     41027: "jungle_chess_2pcs_raw_endgame_complete",
     40996: "Fashion-MNIST",
@@ -58,7 +58,7 @@ tasks = {
     1590: "adult",
     1486: "nomao",
     1461: "bank-marketing",
-    1111: "KDDCup09_appetency",
+    # 1111: "KDDCup09_appetency",
 }
 
 # searchers = ["optuna", "cfo"]
